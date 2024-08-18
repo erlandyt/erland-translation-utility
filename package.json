@@ -1,0 +1,26 @@
+{
+  "name": "erland-translation-utility",
+  "version": "1.0.0",
+  "description": "",
+  "main": "translate.js",
+  "scripts": {
+    "test": "echo \"Running eslint\" & npx eslint ./index.js ./public/js/*.js --format html --output-file public/lintresults.html & echo \"LanguageValidate\" & node ./languageValidate.js",
+    "eslint": "npx eslint ./index.js ./public/js/*.js ./*.js **/*.js --format html --output-file public/lintresults.html"
+  },
+  "author": "Erland.fi",
+  "repository": "github:erlandyt/erland-translation-utility",
+  "license": "Copyright",
+  "type": "module",
+  "engines": {
+    "node": "16.x"
+  },
+  "dependencies": {
+    "accept-language-parser": "^1.5.0",
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1",
+    "express": "^4.19.2",
+    "html-entities": "^2.3.3",
+    "ora": "^8.0.1"
+  }
+}
