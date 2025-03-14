@@ -1,30 +1,127 @@
 import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
-import {/*encode, */decode} from 'html-entities';
+import {decode} from 'html-entities';
+import updateClientScript from './client-server.js';
 import parser from 'accept-language-parser';
 /*import { url } from 'inspector';*/
 
 const __dirname = path.resolve();
 let debugMode = process.argv.includes("--debug");
 
+let config = {
+  languages: [
+    "fi",
+    "en",
+    "se"
+  ],
+  tests: {
+    fi: /(fi(-..|))/ig,
+    en: /(en(-..|))/ig,
+    se: /(se(-..|))/ig,
+    qqq: /(qqq)/ig,
+    qqx: /(qqx)/ig
+  },
+  debug: false,
+  disableDevLang: false
+}
+
+/*
+* Translation type attributes:
+* alt: Have localied alt-text. Only for <img> tags.
+* src: Have localized src. Add "-alt" to the end of the translation key to translate the alt text. Only for <img> tags.
+* list: Have a list of items. Only for <ul> and <ol> tags. Currently starts by removing all children, should be fixed in future.
+* table: Have a table. Only for <table> tags. Doesn't remove children.
+*
+* */
+
+function updateModifiedValues(original, updates) {
+  for (const key in updates) {
+    try {
+      const updateValue = updates[key];
+      const originalValue = original[key];
+
+      // Handle RegExp explicitly
+      if (updateValue instanceof RegExp) {
+        if (!(originalValue instanceof RegExp) || originalValue.toString() !== updateValue.toString()) {
+          original[key] = updateValue; // Replace only if different
+        }
+      } else if (typeof updateValue === 'object' && updateValue !== null) {
+        if (Array.isArray(updateValue)) {
+          // Ensure arrays are updated only if they differ
+          if (!Array.isArray(originalValue)) {
+            original[key] = updateValue; // Replace non-array with array
+          } else if (JSON.stringify(originalValue) !== JSON.stringify(updateValue)) {
+            original[key] = updateValue; // Replace with new array
+          }
+        } else {
+          // Handle objects, check for empty objects
+          if (typeof originalValue !== 'object' || Array.isArray(originalValue) || originalValue === null) {
+            original[key] = {}; // Initialize as an object if needed
+          }
+          if (Object.keys(updateValue).length === 0) {
+            // If the updated object is empty, replace the original
+            original[key] = {};
+          } else {
+            updateModifiedValues(original[key], updateValue); // Recurse for nested objects
+          }
+        }
+      } else if (typeof updateValue === 'boolean') {
+        // Ensure booleans are updated only if different
+        if (typeof originalValue !== 'boolean' || originalValue !== updateValue) {
+          original[key] = updateValue;
+        }
+      } else if (typeof updateValue === 'number') {
+        // Ensure numbers are updated only if different
+        if (typeof originalValue !== 'number' || originalValue !== updateValue) {
+          original[key] = updateValue;
+        }
+      } else if (typeof updateValue === 'string') {
+        // Ensure strings are updated only if different
+        if (typeof originalValue !== 'string' || originalValue !== updateValue) {
+          original[key] = updateValue;
+        }
+      } else if (updateValue === null) {
+        // Replace with null if needed
+        original[key] = null;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  return original;
+}
+
+export function translationConfig(newConfig) {
+  if (newConfig) {
+    config = updateModifiedValues(config, newConfig);
+  }
+  if (config.disableDevLang) {
+    config.languages.push("qqq");
+    config.languages.push("qqx");
+    config.tests.qqq = /(qqq)/ig;
+    config.tests.qqx = /(qqx)/ig;
+  }
+  return config;
+}
+
 export function fixlangcode(code) {
   if (code === null || code === undefined) {return null;}
-  if (code.toLowerCase() === "selko") {return "selko";}
 
   let correctCode = null;
 
   let tests = {
     fi: /(fi(-..|))/ig,
     en: /(en(-..|))/ig,
-    et: /(et(-..|))/ig,
-    se: /(se(-..|))/ig
+    sv: /(sv(-..|))/ig,
+    qqq: /(qqq)/ig,
+    qqx: /(qqx)/ig
   };
   if (debugMode) {
     console.log(typeof code);
     console.log("code", code);
   }
-  if (code === null || code === undefined) {return null;} //Escape if the language code is wrong
+  if (code === false) {return null;} //Escape if the language code is wrong
 
   if (typeof code === "object") {
     //If codes are a list, then go through them
@@ -48,20 +145,16 @@ export function fixlangcode(code) {
 }
 
 export function languageSelected(req) {
-  let supportedLanguages = ['sv', 'et', 'en', 'fi'];
-  if (req.query.lang?.toLowerCase() === "selko") {
-    return 'selko';
-  }
-  const language = (
+  let supportedLanguages = ['sv', 'en', 'fi', 'qqq', 'qqx'];
+  return (
     fixlangcode(req.query.lang) ||
-    parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true})||
+    parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true}) ||
     "en"
   );
-  return language;
 }
 
 export function translate(req, page) {
-  let supportedLanguages = ['sv', 'et', 'en', 'fi'];
+  let supportedLanguages = ['sv', 'en', 'fi', 'qqq', 'qqx'];
   const language = (
     fixlangcode(req.query.lang) ||
     parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true})||
@@ -73,21 +166,25 @@ export function translate(req, page) {
   let languageFiles = {
     "en": "en.json",
     "fi": "fi.json",
-    "et": "et.json",
     "se": "se.json",
-    "selko": "selko.json"
+    "qqq": null,
+    "qqx": null
   };
 
-  const translations = JSON.parse(fs.readFileSync(__dirname+"/lang/"+languageFiles[language]));
-  const blank = JSON.parse(fs.readFileSync(__dirname+"/lang/bl.json"));
+  let translations = {} // Empty object for qqq & qqx since we won't load any file
+  if (language !== "qqq" && language !== "qqx") {
+    translations = JSON.parse(fs.readFileSync(__dirname+"/lang/"+languageFiles[language]).toString());
+  }
+  const blank = JSON.parse(fs.readFileSync(__dirname+"/lang/bl.json").toString());
 
   let $ = cheerio.load(page);
   //For all element
   $("html").attr('lang', language);
 
-  $("[data-translation]").each(i => {
+  $("[data-translation]").each((i, v) => {
     try {
-      let element = $(i);
+      let element = $(v);
+
       if (debugMode) {
         console.log("element", typeof element);
         console.log("selector", typeof $(this));
@@ -96,10 +193,20 @@ export function translate(req, page) {
         console.log(typeof translations[element.attr('data-translation')]);
         console.log("first");
       }
+
+      if (language === "qqq") {
+        const translationKey = element.attr('data-translation');
+        // Show the translation key instead of the value
+        element.html(translationKey);
+        element.attr("data-translated", translationKey);
+        return;
+      } else if (language === "qqx") {
+        // Hide the element
+        element.html("");
+        element.attr("data-translated", "");
+        return;
+      }
       if (translations[element.attr('data-translation')] === null ||typeof translations[element.attr('data-translation')]=== "undefined"||translations[element.attr('data-translation')]==="") {
-        if (element.attr("data-translation-special") === "selko") {
-          return;
-        }
         if (translations[element.attr('data-translation')]==="") {
           console.log("no translation:", element.attr('data-translation'), element.html());
         } else {
@@ -111,17 +218,36 @@ export function translate(req, page) {
       } else {
         // Main section
         if (element.attr("data-translation-type")?.toLowerCase() === "alt") {
+          //Image alt, if source is required use "src"
           element.attr('alt', translations[element.attr('data-translation')]);
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "src") {
+          // Source. Alt can be defined with "*-alt"
+          element.attr('src', translations[element.attr('data-translation')])
+          if (translations[element.attr('data-translation')+"-alt"]) {
+            element.attr('alt', translations[element.attr('data-translation')+"-alt"])
+          }
         } else if (element.attr("data-translation-type")?.toLowerCase() === "list") {
+          if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
+            throw new Error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
+          }
+          if (element.children().length !== translations[element.attr('data-translation')].length) {
+            console.warn("Warning: Length mismatch:", element.attr('data-translation'), element.children().length, translations[element.attr('data-translation')].length);
+          }
           //Makes a list if the attribute matches
-          element.html("");
-          translations[element.attr('data-translation')].forEach(v => {
-            if (v === null ||typeof v === "undefined"|| v ==="") {
-              console.log("No translation:", element.attr('data-translation'));
-            } else {
-              element.append("<li>"+v+"</li>");
+          const existingItems = element.children('li');
+          let translationsTemp = translations[element.attr('data-translation')]
+          existingItems.each((index, element) => {
+            if (index < translationsTemp.length) {
+              $(element).html(translationsTemp[index]);
             }
           });
+
+          // Add new <li> elements if needed
+          if (translationsTemp.length > existingItems.length) {
+            for (let i = existingItems.length; i < translationsTemp.length; i++) {
+              element.append(`<li>${translationsTemp[i]}</li>`);
+            }
+          }
         } else if (element.attr("data-translation-type")?.toLowerCase() === "table") {
           /*[
             ["data", "data", "data"],
@@ -160,10 +286,6 @@ export function translate(req, page) {
           $(v).attr("href", url.toString().replaceAll("https://erland.fi", ""));
         }
       }
-      /*if (/#.im.test(v.attr("href"))) {} else {
-        //list. "?lang="+ +"#"+rest//add language as second
-      }//language
-      v.attr("href")+"?lang="*/
     });
   }
   return $.html();
