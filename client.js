@@ -4,7 +4,7 @@ let settings = [[["settings"]]];
 
 function checkLanguageValidity(lang) {
   if (!settings.languages.includes(lang)) {
-    throw new Error("Language not found");
+    throw new Error("Language not valid");
   } else {
     return true;
   }
@@ -13,6 +13,14 @@ function checkLanguageValidity(lang) {
 function getTranslation(lang) {
   if (!lang) {
     throw new Error("Language not provided");
+  }
+  if (!settings.disableDevLang) {
+    if (language === "qqq") {
+      return "dev";
+    }
+    if (language === "qqx") {
+      return "dev";
+    }
   }
   fetch("/language/" + lang + ".json").then((response) => {
     return response.json();
@@ -63,22 +71,22 @@ function updateLanguage(language) {
         if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
           throw new Error("Tried to translate a list that is not a <ul> or <ol> element: " + translationKey);
         }
-        if (element.children().length !== translations[translationKey].length) {
-          console.warn("Warning: Length mismatch:", translationKey, element.children().length, translations[translationKey].length);
+        if (element.children/*()*/.length !== translations[translationKey].length) {
+          console.warn("Warning: Length mismatch:", translationKey, element.children/*()*/.length, translations[translationKey].length);
         }
         //Makes a list if the attribute matches
-        const existingItems = element.children('li');
+        const existingItems = element.children/*('li')*/;
         let translationsTemp = translations[translationKey]
-        existingItems.each((index, element) => {
+        existingItems.forEach((index, element) => {
           if (index < translationsTemp.length) {
-            $(element).html(translationsTemp[index]);
+            element.innerHTML = translationsTemp[index];
           }
         });
 
         // Add new <li> elements if needed
         if (translationsTemp.length > existingItems.length) {
           for (let i = existingItems.length; i < translationsTemp.length; i++) {
-            element.append(`<li>${translationsTemp[i]}</li>`);
+            element.insertAdjacentHTML("beforeend", `<li>${translationsTemp[i]}</li>`);//element.append(`<li>${translationsTemp[i]}</li>`);
           }
         }
       } else if (translationType?.toLowerCase() === "table") {
@@ -90,20 +98,26 @@ function updateLanguage(language) {
 
         array.forEach((v, i) => {
           v.forEach((v2, i2) => {
-            //console.log($(element).find("tr")[i])
-            //console.log($(element).find("tr")[i].find("td")[i])
-            let element2 = $(element).find("tr")[i];
-            let element3 = $(element2).find("td, th")[i2];
-            $(element3).html(v2);
-            //$(element).find("tr")[i].find("td")[i]//.html(v)
+            let element2 = element.querySelectorAll("tr")[i];
+            if (element2) {
+              let element3 = element2.querySelectorAll("td, th")[i2];
+              if (element3) {
+                element3.innerHTML = v2;
+              } else {
+                console.warn("Warning: Element not found", i, i2);
+              }
+            } else {
+              console.warn("Warning: Element not found", i);
+            }
           });
         });
       } else {
-        element.html(translations[translationKey]);
-        if (element.hasClass('hacker') || element.attr("data-value")) {
-          element.setAttribute("data-value", decode(translations[translationKey], {level: 'html5'}).replaceAll("<br>", "\n"));
+        element.innerHTML = translations[translationKey];
+        if (element.classList.contains('hacker') || element.getAttribute("data-value")) {
+          element.setAttribute("data-value", decode(translations[translationKey], { level: 'html5' }).replaceAll("<br>", "\n"));
         }
-        if (typeof element.attr("data-translated") !== "undefined") {
+        
+        if (element.hasAttribute("data-translated")) {
           element.setAttribute("data-translated", translations[translationKey]);
         }
       }
