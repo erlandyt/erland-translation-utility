@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 import {decode} from 'html-entities';
-import updateClientScript from './client-server.js';
+import { updateClientScript } from './client-server.js';
 import parser from 'accept-language-parser';
 /*import { url } from 'inspector';*/
 

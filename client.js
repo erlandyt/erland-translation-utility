@@ -1,6 +1,36 @@
 // Translation utility clientside edition
+function getTranslation(lang) {
+  if (!lang) {
+    throw new Error("Language not provided");
+  }
+  if (!settings.disableDevLang) {
+    if (lang === "qqq") {
+      return "dev";
+    }
+    if (lang === "qqx") {
+      return "dev";
+    }
+  }
+  return fetch("/language/" + lang + ".json").then((response) => {
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    return response.json();
+  }).then((data) => {
+    return data;
+  });
+}
 
-let settings = [[["settings"]]];
+// DO NOT CHANGE LINE BELOW - BREAKS BOTH PROD AND DEV
+let settings = [[["settings placeholder"]]]; //This is automatically replaced before serving. Do not modify this line. THIS MUST NOT BE AN OBJECT INITIALLY. THIS MUST THROW AN ERROR.
+// DO NOT CHANGE LINE ABOVE - BREAKS BOTH PROD AND DEV
+
+function decode(html) {
+  const txt = document.createElement('textarea');
+  // Replace <br> tags with newlines first
+  txt.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
+  return txt.value;
+}
 
 function checkLanguageValidity(lang) {
   if (!settings.languages.includes(lang)) {
@@ -10,26 +40,9 @@ function checkLanguageValidity(lang) {
   }
 }
 
-function getTranslation(lang) {
-  if (!lang) {
-    throw new Error("Language not provided");
-  }
-  if (!settings.disableDevLang) {
-    if (language === "qqq") {
-      return "dev";
-    }
-    if (language === "qqx") {
-      return "dev";
-    }
-  }
-  fetch("/language/" + lang + ".json").then((response) => {
-    return response.json();
-  }).then((data) => {
-    return data;
-  });
-}
 
-function updateLanguage(language) {
+
+/*function updateLanguage(language) {
   if (!checkLanguageValidity(language)) {
     throw new Error("Language not found");
   }
@@ -39,8 +52,29 @@ function updateLanguage(language) {
     if (translations === null || typeof translations === "undefined") {
       throw new Error("Translation not found");
     }
+  }*/
+function updateLanguage(language) {
+  if (!checkLanguageValidity(language)) {
+    throw new Error("Language not found");
   }
-  document.querySelectorAll("[data-translate]").forEach((element) => {
+  let translations = {};
+  if (language !== "qqq" && language !== "qqx") {
+    getTranslation(language).then((result) => {
+      translations = result;
+      if (translations === null || typeof translations === "undefined") {
+        throw new Error("Translation not found");
+      }
+      applyTranslations(language, translations);
+    }).catch((error) => {
+      console.error(error);
+    });
+  } else {
+    applyTranslations(language, translations);
+  }
+}
+
+function applyTranslations(language, translations) {
+  Array.from(document.querySelectorAll("[data-translation]")).forEach((element) => {
     let translationKey = element.getAttribute('data-translation');
     let translationType = element.getAttribute('data-translation-type');
     if (language === "qqq") {
@@ -68,18 +102,18 @@ function updateLanguage(language) {
           element.setAttribute('alt', translations[translationKey + "-alt"])
         }
       } else if (translationType?.toLowerCase() === "list") {
-        if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
+        if (!['ul', 'ol'].includes(element.tagName.toLowerCase())) {
           throw new Error("Tried to translate a list that is not a <ul> or <ol> element: " + translationKey);
         }
-        if (element.children/*()*/.length !== translations[translationKey].length) {
-          console.warn("Warning: Length mismatch:", translationKey, element.children/*()*/.length, translations[translationKey].length);
+        if (element.children.length !== translations[translationKey].length) {
+          console.warn("Warning: Length mismatch:", translationKey, element.children.length, translations[translationKey].length);
         }
         //Makes a list if the attribute matches
-        const existingItems = element.children/*('li')*/;
+        const existingItems = Array.from(element.children);
         let translationsTemp = translations[translationKey]
-        existingItems.forEach((index, element) => {
+        existingItems.forEach((element2, index) => {
           if (index < translationsTemp.length) {
-            element.innerHTML = translationsTemp[index];
+            element2.innerHTML = translationsTemp[index];
           }
         });
 
@@ -97,24 +131,24 @@ function updateLanguage(language) {
         let array = translations[translationKey];
 
         array.forEach((v, i) => {
-          v.forEach((v2, i2) => {
-            let element2 = element.querySelectorAll("tr")[i];
-            if (element2) {
+          let element2 = element.querySelectorAll("tr")[i];
+          if (element2) {
+            v.forEach((v2, i2) => {
               let element3 = element2.querySelectorAll("td, th")[i2];
               if (element3) {
                 element3.innerHTML = v2;
               } else {
                 console.warn("Warning: Element not found", i, i2);
               }
-            } else {
-              console.warn("Warning: Element not found", i);
-            }
-          });
+            });
+          } else {
+            console.warn("Warning: Element not found", i);
+          }
         });
       } else {
         element.innerHTML = translations[translationKey];
         if (element.classList.contains('hacker') || element.getAttribute("data-value")) {
-          element.setAttribute("data-value", decode(translations[translationKey], { level: 'html5' }).replaceAll("<br>", "\n"));
+          element.setAttribute("data-value", decode(translations[translationKey], { level: 'html5' }).replace(/<br>/g, "\n"));
         }
         
         if (element.hasAttribute("data-translated")) {

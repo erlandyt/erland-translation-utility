@@ -1,11 +1,16 @@
 import fs from 'fs';
-import translationConfig from './translate.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { translationConfig } from './translate.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let clientScript = "console.error('Translation Failure')";
 
 function generateClientScript() {
   let file = fs.readFileSync(__dirname + "/client.js").toString();
-  file = file.replaceAll("[[[\"settings\"]]]", JSON.stringify(translationConfig()));
+  file = file.replaceAll("[[[\"settings placeholder\"]]]", JSON.stringify(translationConfig()));
   clientScript = file;
   return 'client-server';
 }
