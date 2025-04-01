@@ -104,7 +104,6 @@ export function translationConfig(newConfig) {
   }
   return config;
 }
-import { updateClientScript } from './client-server.js';
 
 export function fixlangcode(code) {
   if (code === null || code === undefined) {return null;}
