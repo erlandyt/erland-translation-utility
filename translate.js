@@ -12,7 +12,8 @@ let config = {
     qqx: /(qqx)/ig
   },
   debug: false,
-  disableDevLang: false
+  disableDevLang: false,
+  languageDir: "lang"
 }
 import * as cheerio from 'cheerio';
 import fs from 'fs';
