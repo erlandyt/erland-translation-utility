@@ -18,7 +18,6 @@ import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 import {decode} from 'html-entities';
-import { updateClientScript } from './client-server.js';
 import parser from 'accept-language-parser';
 /*import { url } from 'inspector';*/
 
@@ -105,6 +104,7 @@ export function translationConfig(newConfig) {
   }
   return config;
 }
+import { updateClientScript } from './client-server.js';
 
 export function fixlangcode(code) {
   if (code === null || code === undefined) {return null;}
@@ -231,7 +231,7 @@ export function translate(req, page) {
           if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
             throw new Error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
           }
-          if (element.children().length !== translations[element.attr('data-translation')].length) {
+          if (element.children().length !== translations[element.attr('data-translation')].length && element.children().length !== 0) {
             console.warn("Warning: Length mismatch:", element.attr('data-translation'), element.children().length, translations[element.attr('data-translation')].length);
           }
           //Makes a list if the attribute matches

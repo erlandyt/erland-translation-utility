@@ -1,8 +1,8 @@
 {
   "name": "erland-translation-utility",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
-  "main": "translate.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Running eslint\" & npx eslint ./index.js ./public/js/*.js --format html --output-file public/lintresults.html & echo \"LanguageValidate\" & node ./languageValidate.js",
     "eslint": "npx eslint ./index.js ./public/js/*.js ./*.js **/*.js --format html --output-file public/lintresults.html"
