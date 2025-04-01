@@ -1,14 +1,3 @@
-import * as cheerio from 'cheerio';
-import fs from 'fs';
-import path from 'path';
-import {decode} from 'html-entities';
-import { updateClientScript } from './client-server.js';
-import parser from 'accept-language-parser';
-/*import { url } from 'inspector';*/
-
-const __dirname = path.resolve();
-let debugMode = process.argv.includes("--debug");
-
 let config = {
   languages: [
     "fi",
@@ -25,6 +14,18 @@ let config = {
   debug: false,
   disableDevLang: false
 }
+import * as cheerio from 'cheerio';
+import fs from 'fs';
+import path from 'path';
+import {decode} from 'html-entities';
+import { updateClientScript } from './client-server.js';
+import parser from 'accept-language-parser';
+/*import { url } from 'inspector';*/
+
+const __dirname = path.resolve();
+let debugMode = process.argv.includes("--debug");
+
+
 
 /*
 * Translation type attributes:
