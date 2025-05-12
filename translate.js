@@ -174,7 +174,7 @@ export function translate(req, page) {
 
   let translations = {} // Empty object for qqq & qqx since we won't load any file
   if (language !== "qqq" && language !== "qqx") {
-    translations = JSON.parse(fs.readFileSync(__dirname+"/lang/"+languageFiles[language]).toString());
+    translations = JSON.parse(fs.readFileSync(__dirname+"/lang/"+language+".json").toString());
   }
   const blank = JSON.parse(fs.readFileSync(__dirname+"/lang/bl.json").toString());
 
