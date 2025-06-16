@@ -25,15 +25,12 @@ import parser from 'accept-language-parser';
 const __dirname = path.resolve();
 let debugMode = process.argv.includes("--debug");
 
-
-
 /*
 * Translation type attributes:
 * alt: Have localied alt-text. Only for <img> tags.
 * src: Have localized src. Add "-alt" to the end of the translation key to translate the alt text. Only for <img> tags.
 * list: Have a list of items. Only for <ul> and <ol> tags. Currently starts by removing all children, should be fixed in future.
 * table: Have a table. Only for <table> tags. Doesn't remove children.
-*
 * */
 
 function updateModifiedValues(original, updates) {
