@@ -11,7 +11,8 @@ function getTranslation(lang) {
       return "dev";
     }
   }
-  console.log("/"+settings.languageDir+"/" + lang + ".json")
+  console.log("/"+settings.languageDir+"/" + lang + ".json");
+  console.log("Dir:", settings.languageDir, "Lang:", lang);
   return fetch("/"+settings.languageDir+"/" + lang + ".json").then((response) => {
     if (!response.ok) {
       throw new Error("Network response was not ok");
