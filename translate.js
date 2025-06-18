@@ -2,12 +2,12 @@ let config = {
   languages: [
     "fi",
     "en",
-    "se"
+    "sv"
   ],
   tests: {
     fi: /(fi(-..|))/ig,
     en: /(en(-..|))/ig,
-    se: /(se(-..|))/ig,
+    sv: /(sv(-..|))/ig,
     qqq: /(qqq)/ig,
     qqx: /(qqx)/ig
   },
@@ -94,7 +94,7 @@ export function translationConfig(newConfig) {
   if (newConfig) {
     config = updateModifiedValues(config, newConfig);
   }
-  if (config.disableDevLang) {
+  if (!config.disableDevLang) {
     config.languages.push("qqq");
     config.languages.push("qqx");
     config.tests.qqq = /(qqq)/ig;
