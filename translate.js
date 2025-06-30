@@ -277,7 +277,7 @@ export function translate(req, page) {
   });
   if (req.query.lang) {
     $("a").each((i, v) => {
-      if (!/(mailto:|https|http|.*\/blog\/).*/igm.test($(v).attr("href"))) {
+      if (!/(mailto:|https|http|.*\/blog\/|^#).*/igm.test($(v).attr("href"))) {
         let url = new URL($(v).attr("href"), "https://erland.fi");
         if (!url.searchParams.get("lang")) {
           /*url.searchParams = */url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
