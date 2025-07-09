@@ -31,6 +31,7 @@ let debugMode = process.argv.includes("--debug");
 * src: Have localized src. Add "-alt" to the end of the translation key to translate the alt text. Only for <img> tags.
 * list: Have a list of items. Only for <ul> and <ol> tags. Currently starts by removing all children, should be fixed in future.
 * table: Have a table. Only for <table> tags. Doesn't remove children.
+* attributeOnly: Only translate a attribute
 * */
 
 function updateModifiedValues(original, updates) {
@@ -164,7 +165,7 @@ export function translate(req, page) {
   let languageFiles = {
     "en": "en.json",
     "fi": "fi.json",
-    "se": "se.json",
+    "sv": "sv.json",
     "qqq": null,
     "qqx": null
   };
@@ -215,16 +216,16 @@ export function translate(req, page) {
         if (!Object.keys(blank).includes(element.attr('data-translation'))) {console.log("Not in blank", element.attr('data-translation'));}
       } else {
         // Main section
-        if (element.attr("data-translation-type")?.toLowerCase() === "alt") {
+        if (element.attr("data-translation-type")?.toLowerCase() === "alt") { // Alt text
           //Image alt, if source is required use "src"
           element.attr('alt', translations[element.attr('data-translation')]);
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "src") {
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "src") { // Image src
           // Source. Alt can be defined with "*-alt"
           element.attr('src', translations[element.attr('data-translation')])
           if (translations[element.attr('data-translation')+"-alt"]) {
             element.attr('alt', translations[element.attr('data-translation')+"-alt"])
           }
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "list") {
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "list") { // List
           if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
             throw new Error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
           }
@@ -246,13 +247,31 @@ export function translate(req, page) {
               element.append(`<li>${translationsTemp[i]}</li>`);
             }
           }
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "table") {
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "table") { // Table
           /*[
             ["data", "data", "data"],
             ["data", "data", "data", "data"], etc
           ]*/
           let array = translations[element.attr('data-translation')];
-
+          let failed = false  
+          if (!Array.isArray(array)) {console.error("Not an array"); return;}
+          array.forEach(v => {
+            if (typeof v === "string") {
+              console.error("Did you mean to set the type to 'list'?");
+              failed = true
+            } else if (!Array.isArray(v)) {
+              console.error("Not an inner array");
+              failed = true
+            } else {
+              v.forEach(v2 => {
+                if (typeof v2 !== "string") {
+                  console.error("Not a string in inner array.");
+                  failed = true
+                }
+              });
+            }
+          });
+          if (failed === true) {console.error("Failed to translate array: \""+element.attr('data-translation')+"\""); return;}
           array.forEach((v, i) => {
             v.forEach((v2, i2) => {
               //console.log($(element).find("tr")[i])
@@ -263,10 +282,14 @@ export function translate(req, page) {
               //$(element).find("tr")[i].find("td")[i]//.html(v)
             });
           });
-        } else {
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "attributeOnly") { // Attribute translation only
+          if (!element.attr("data-translation-attribute")?) {console.error("no attribute"); return;}
+          element.attr(element.attr("data-translation-attribute"), translations[element.attr('data-translation')])
+        } else { // Normal translation
           element.html(translations[element.attr('data-translation')]);
           if (element.hasClass('hacker')||element.attr("data-value")) {
             element.attr("data-value", decode(translations[element.attr('data-translation')], {level: 'html5'}).replaceAll("<br>", "\n"));
+            element.attr("aria-label", translations[element.attr('data-translation')].replaceAll("<br>", ""));
           }
           if (typeof element.attr("data-translated") !== "undefined") {
             element.attr("data-translated", translations[element.attr('data-translation')]);
