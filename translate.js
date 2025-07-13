@@ -225,6 +225,8 @@ export function translate(req, page) {
           if (translations[element.attr('data-translation')+"-alt"]) {
             element.attr('alt', translations[element.attr('data-translation')+"-alt"])
           }
+        } else if (element.attr("data-translation-type")?.toLowerCase() === "aria-label") {
+          element.attr("aria-label", translations[element.attr('data-translation')]);
         } else if (element.attr("data-translation-type")?.toLowerCase() === "list") { // List
           if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
             throw new Error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
