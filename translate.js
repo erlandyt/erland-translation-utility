@@ -285,7 +285,7 @@ export function translate(req, page) {
             });
           });
         } else if (element.attr("data-translation-type")?.toLowerCase() === "attributeOnly") { // Attribute translation only
-          if (!element.attr("data-translation-attribute")?) {console.error("no attribute"); return;}
+          if (!element.attr("data-translation-attribute")) {console.error("No attribute:", element.attr("data-translation")); return;}
           element.attr(element.attr("data-translation-attribute"), translations[element.attr('data-translation')])
         } else { // Normal translation
           element.html(translations[element.attr('data-translation')]);
