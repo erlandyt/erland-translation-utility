@@ -13,7 +13,8 @@ let config = {
   },
   debug: false,
   disableDevLang: false,
-  languageDir: "lang"
+  languageDir: "lang",
+  website: ""
 }
 import * as cheerio from 'cheerio';
 import fs from 'fs';
@@ -144,7 +145,7 @@ export function fixlangcode(code) {
 }
 
 export function languageSelected(req) {
-  let supportedLanguages = ['sv', 'en', 'fi', 'qqq', 'qqx'];
+  let supportedLanguages = config.languages;
   return (
     fixlangcode(req.query.lang) ||
     parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true}) ||
@@ -152,8 +153,8 @@ export function languageSelected(req) {
   );
 }
 
-export function translate(req, page) {
-  let supportedLanguages = ['sv', 'en', 'fi', 'qqq', 'qqx'];
+export function translate(req, page, pagename) {
+  let supportedLanguages = config.languages;
   const language = (
     fixlangcode(req.query.lang) ||
     parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true})||
@@ -311,5 +312,17 @@ export function translate(req, page) {
       }
     });
   }
+  config.languages.forEach(e => {
+    if (/(qqq|qqx)/gmi.test(e)) {return;}
+    $("head").append('<link rel="alternate" hreflang="'+e+'" href="'+config.website+'/'+pagename+'?lang='+e+'" />');
+  })
+  $("head").append('<link rel="alternate" hreflang="x-default" href="'+config.website+'/'+pagename+'" />');
+  // set canonical
+  if (req.query.lang) {
+    $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'?lang='+language+'" />');
+  } else {
+    $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'" />');
+  }
+
   return $.html();
 }
