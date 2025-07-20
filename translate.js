@@ -105,16 +105,16 @@ export function translationConfig(newConfig) {
   return config;
 }
 
-export function fixlangcode(code) {
+export function fixlangcode(code) { // Necessary? Maybe use pick?
   if (code === null || code === undefined) {return null;}
 
   let correctCode = null;
 
-  let tests = {
-    fi: /(fi(-..|))/ig,
+  let tests = { // MOVE TO CONFIG!
+    fi: /(fi(-..|))/ig, // Autogen?
     en: /(en(-..|))/ig,
     sv: /(sv(-..|))/ig,
-    qqq: /(qqq)/ig,
+    qqq: /(qqq)/ig, //Figre out support in language picker
     qqx: /(qqx)/ig
   };
   if (debugMode) {
@@ -162,8 +162,9 @@ export function translate(req, page, pagename) {
     //fixlangcode(req.cookies["lang"]) ||
     "en"
   );
+  // Add language validation
   console.log("Final code", language);
-  let languageFiles = {
+  let languageFiles = { //MOVE TO CONFIG!
     "en": "en.json",
     "fi": "fi.json",
     "sv": "sv.json",
