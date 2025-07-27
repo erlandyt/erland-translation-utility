@@ -1,0 +1,16 @@
+- [ ] Configuration
+- [ ] Language parsing
+  - [ ] Way to get it only
+- [ ] Page translation system
+  - [ ] Client-side version
+  - [ ] Server-side version
+  - [ ] Attributes
+    - [ ] List
+    - [ ] Table
+    - [ ] Alt
+    - [ ] Src
+    - [ ] Attribute
+    - [ ] Aria-labels
+- [ ] Tests
+  - [ ] Tests for document translation
+  - [ ] Test for language parsing
