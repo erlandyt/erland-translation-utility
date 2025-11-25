@@ -9,12 +9,23 @@ let config = {
     en: /(en(-..|))/ig,
     sv: /(sv(-..|))/ig,
     qqq: /(qqq)/ig,
-    qqx: /(qqx)/ig
+    qqx: /(qqx)/ig,
+    qqz: /(qqz)/ig
   },
+  languageFiles: {
+    "en": "en.json",
+    "fi": "fi.json",
+    "sv": "sv.json",
+    "qqq": null,
+    "qqx": null,
+    "qqz": null
+  },
+  defaultLanguage: "en",
   debug: false,
   disableDevLang: false,
   languageDir: "lang",
-  website: ""
+  website: "",
+  addtohead: "" // Things to add to head in each page.
 }
 import * as cheerio from 'cheerio';
 import fs from 'fs';
@@ -33,6 +44,7 @@ let debugMode = process.argv.includes("--debug");
 * list: Have a list of items. Only for <ul> and <ol> tags. Currently starts by removing all children, should be fixed in future.
 * table: Have a table. Only for <table> tags. Doesn't remove children.
 * attributeOnly: Only translate a attribute
+* attributes: Translate multiple attributes. Use data-translation-attributes to define a comma-separated list of attributes to translate. Use "content" to translate inner text.
 * */
 
 function updateModifiedValues(original, updates) {
@@ -99,8 +111,10 @@ export function translationConfig(newConfig) {
   if (!config.disableDevLang) {
     config.languages.push("qqq");
     config.languages.push("qqx");
+    config.languages.push("qqz");
     config.tests.qqq = /(qqq)/ig;
     config.tests.qqx = /(qqx)/ig;
+    config.tests.qqz = /(qqz)/ig;
   }
   return config;
 }
@@ -149,6 +163,7 @@ export function languageSelected(req) {
   return (
     fixlangcode(req.query.lang) ||
     parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true}) ||
+    config.defaultLanguage ||
     "en"
   );
 }
@@ -157,11 +172,14 @@ export function translate(req, page, pagename) {
   let supportedLanguages = config.languages;
   const language = (
     fixlangcode(req.query.lang) ||
-    parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true})||
-    //fixlangcode(req.headers["accept-language"].replaceAll(/(:|;)q=.*/ig, "").split(',')) ||
-    //fixlangcode(req.cookies["lang"]) ||
+    parser.pick(supportedLanguages, req.headers["accept-language"], {loose: true}) ||
+    config.defaultLanguage ||
     "en"
   );
+  let defaultLanguageInUse = true;
+  if (fixlangcode(req.query.lang)) {
+    defaultLanguageInUse = false;
+  }
   // Add language validation
   console.log("Final code", language);
   let languageFiles = { //MOVE TO CONFIG!
@@ -172,8 +190,8 @@ export function translate(req, page, pagename) {
     "qqx": null
   };
 
-  let translations = {} // Empty object for qqq & qqx since we won't load any file
-  if (language !== "qqq" && language !== "qqx") {
+  let translations = {} // Empty object for qqq, qqx & qqz since we won't load any file
+  if (language !== "qqq" && language !== "qqx" && language !== "qqz") {
     translations = JSON.parse(fs.readFileSync(__dirname+"/lang/"+language+".json").toString());
   }
   const blank = JSON.parse(fs.readFileSync(__dirname+"/lang/bl.json").toString());
@@ -181,6 +199,9 @@ export function translate(req, page, pagename) {
   let $ = cheerio.load(page);
   //For all element
   $("html").attr('lang', language);
+  try {
+   $("head").append(config.addtohead);
+  } catch (err) {console.error(err);}
 
   $("[data-translation]").each((i, v) => {
     try {
@@ -206,6 +227,8 @@ export function translate(req, page, pagename) {
         element.html("");
         element.attr("data-translated", "");
         return;
+      } else if (language === "qqz") {
+        return;
       }
       if (translations[element.attr('data-translation')] === null ||typeof translations[element.attr('data-translation')]=== "undefined"||translations[element.attr('data-translation')]==="") {
         if (translations[element.attr('data-translation')]==="") {
@@ -213,25 +236,27 @@ export function translate(req, page, pagename) {
         } else {
           console.log("no translation in file:", element.attr('data-translation'), element.html());
         }
-        if (typeof element.attr("data-translated") !== "undefined") {element.attr("data-translated", JSON.parse(fs.readFileSync(__dirname+"/lang/"+languageFiles[language]))[element.attr("data-translation")]);}
+        if (typeof element.attr("data-translated") !== "undefined") {element.attr("data-translated", JSON.parse(fs.readFileSync(__dirname+"/lang/"+languageFiles[language]).toString())[element.attr("data-translation")]);}
         // check if the file is in blank file
         if (!Object.keys(blank).includes(element.attr('data-translation'))) {console.log("Not in blank", element.attr('data-translation'));}
       } else {
+        let translationType = element.attr("data-translation-type")?.toLowerCase()||"";
         // Main section
-        if (element.attr("data-translation-type")?.toLowerCase() === "alt") { // Alt text
+        if (translationType === "alt") { // Alt text
           //Image alt, if source is required use "src"
           element.attr('alt', translations[element.attr('data-translation')]);
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "src") { // Image src
+        } else if (translationType === "src") { // Image src
           // Source. Alt can be defined with "*-alt"
           element.attr('src', translations[element.attr('data-translation')])
           if (translations[element.attr('data-translation')+"-alt"]) {
             element.attr('alt', translations[element.attr('data-translation')+"-alt"])
           }
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "aria-label") {
+        } else if (translationType === "aria-label") {
           element.attr("aria-label", translations[element.attr('data-translation')]);
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "list") { // List
+        } else if (translationType === "list") { // List
           if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
-            throw new Error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
+            console.error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
+            return;
           }
           if (element.children().length !== translations[element.attr('data-translation')].length && element.children().length !== 0) {
             console.warn("Warning: Length mismatch:", element.attr('data-translation'), element.children().length, translations[element.attr('data-translation')].length);
@@ -251,7 +276,7 @@ export function translate(req, page, pagename) {
               element.append(`<li>${translationsTemp[i]}</li>`);
             }
           }
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "table") { // Table
+        } else if (translationType === "table") { // Table
           /*[
             ["data", "data", "data"],
             ["data", "data", "data", "data"], etc
@@ -278,25 +303,49 @@ export function translate(req, page, pagename) {
           if (failed === true) {console.error("Failed to translate array: \""+element.attr('data-translation')+"\""); return;}
           array.forEach((v, i) => {
             v.forEach((v2, i2) => {
-              //console.log($(element).find("tr")[i])
-              //console.log($(element).find("tr")[i].find("td")[i])
               let element2 = $(element).find("tr")[i];
               let element3 = $(element2).find("td, th")[i2];
               $(element3).html(v2);
-              //$(element).find("tr")[i].find("td")[i]//.html(v)
             });
           });
-        } else if (element.attr("data-translation-type")?.toLowerCase() === "attributeOnly") { // Attribute translation only
+        } else if (translationType === "attributenly") { // Attribute translation only
           if (!element.attr("data-translation-attribute")) {console.error("No attribute:", element.attr("data-translation")); return;}
           element.attr(element.attr("data-translation-attribute"), translations[element.attr('data-translation')])
+        } else if (translationType === "attributes") {
+          // Get all attributes with data-translation-attributes ("attribute1,attribute2") Found in json with data-translation combined with "-name" as key.
+          if (!element.attr("data-translation-attributes")) {console.error("No attributes:", element.attr("data-translation")); return;}
+          let attrs = element.attr("data-translation-attributes").split(",").map(attr => attr.trim()); // "content" is a special case that means inner text
+          attrs.forEach(attr => {
+            if (attr.trim().toLowerCase() === "content") {
+              let translationResult = translations[element.attr('data-translation') + "-content"];
+              // noinspection DuplicatedCode
+              element.html(translationResult);
+              if (element.hasClass('hacker') || element.attr("data-value")) {
+                element.attr("data-value", decode(translationResult, {level: 'html5'}).replaceAll("<br>", "\n"));
+                element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/, " "));
+              }
+              if (typeof element.attr("data-translated") !== "undefined") {
+                element.attr("data-translated", translationResult);
+              }
+            } else {
+              let key = element.attr('data-translation')+"-"+attr.trim();
+              if (typeof translations[key] === "undefined") {
+                console.error("No translation for attribute:", key);
+              } else {
+                element.attr(attr.trim(), translations[key]);
+              }
+            }
+          });
         } else { // Normal translation
-          element.html(translations[element.attr('data-translation')]);
+          let translationResult = translations[element.attr('data-translation')];
+          // noinspection DuplicatedCode
+          element.html(translationResult);
           if (element.hasClass('hacker')||element.attr("data-value")) {
-            element.attr("data-value", decode(translations[element.attr('data-translation')], {level: 'html5'}).replaceAll("<br>", "\n"));
-            element.attr("aria-label", translations[element.attr('data-translation')].replaceAll("<br>", ""));
+            element.attr("data-value", decode(translationResult, {level: 'html5'}).replaceAll("<br>", "\n"));
+            element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/, " "));
           }
           if (typeof element.attr("data-translated") !== "undefined") {
-            element.attr("data-translated", translations[element.attr('data-translation')]);
+            element.attr("data-translated", translationResult);
           }
         }
       }
@@ -304,21 +353,22 @@ export function translate(req, page, pagename) {
   });
   if (req.query.lang) {
     $("a").each((i, v) => {
-      if (!/(mailto:|https|http|.*\/blog\/|^#).*/igm.test($(v).attr("href"))) {
-        let url = new URL($(v).attr("href"), "https://erland.fi");
+      let href = $(v).attr("href");
+      if (!/(mailto:|https|http|.*\/blog\/|^#).*/igm.test(href)) {
+        let url = new URL(href, config.website || "https://erland.fi");
         if (!url.searchParams.get("lang")) {
-          /*url.searchParams = */url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
-          $(v).attr("href", url.toString().replaceAll("https://erland.fi", ""));
+          url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
+          $(v).attr("href", url.toString().replaceAll(config.website || "https://erland.fi", ""));
         }
       }
     });
   }
   config.languages.forEach(e => {
-    if (/(qqq|qqx)/gmi.test(e)) {return;}
+    if (/(qqq|qqx|qqz)/gmi.test(e)) {return;}
     $("head").append('<link rel="alternate" hreflang="'+e+'" href="'+config.website+'/'+pagename+'?lang='+e+'" />');
   })
   $("head").append('<link rel="alternate" hreflang="x-default" href="'+config.website+'/'+pagename+'" />');
-  // set canonical
+  // figure this shit out later
   if (req.query.lang) {
     $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'?lang='+language+'" />');
   } else {
