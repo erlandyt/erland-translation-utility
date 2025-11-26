@@ -230,7 +230,8 @@ export function translate(req, page, pagename) {
       } else if (language === "qqz") {
         return;
       }
-      if (translations[element.attr('data-translation')] === null ||typeof translations[element.attr('data-translation')]=== "undefined"||translations[element.attr('data-translation')]==="") {
+      let translationType = element.attr("data-translation-type")?.toLowerCase()||"";
+      if ((translations[element.attr('data-translation')] === null ||typeof translations[element.attr('data-translation')]=== "undefined"||translations[element.attr('data-translation')]==="")&&translationType !== "attributes") {
         if (translations[element.attr('data-translation')]==="") {
           console.log("no translation:", element.attr('data-translation'), element.html());
         } else {
@@ -240,7 +241,6 @@ export function translate(req, page, pagename) {
         // check if the file is in blank file
         if (!Object.keys(blank).includes(element.attr('data-translation'))) {console.log("Not in blank", element.attr('data-translation'));}
       } else {
-        let translationType = element.attr("data-translation-type")?.toLowerCase()||"";
         // Main section
         if (translationType === "alt") { // Alt text
           //Image alt, if source is required use "src"
@@ -259,7 +259,7 @@ export function translate(req, page, pagename) {
             return;
           }
           if (element.children().length !== translations[element.attr('data-translation')].length && element.children().length !== 0) {
-            console.warn("Warning: Length mismatch:", element.attr('data-translation'), element.children().length, translations[element.attr('data-translation')].length);
+            console.warn("Warning: Length mismatch:", element.attr('data-translation'), "Element has", element.children().length, "JSON has", translations[element.attr('data-translation')].length);
           }
           //Makes a list if the attribute matches
           const existingItems = element.children('li');
@@ -322,7 +322,7 @@ export function translate(req, page, pagename) {
               element.html(translationResult);
               if (element.hasClass('hacker') || element.attr("data-value")) {
                 element.attr("data-value", decode(translationResult, {level: 'html5'}).replaceAll("<br>", "\n"));
-                element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/, " "));
+                element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/gmi, " "));
               }
               if (typeof element.attr("data-translated") !== "undefined") {
                 element.attr("data-translated", translationResult);
@@ -342,7 +342,7 @@ export function translate(req, page, pagename) {
           element.html(translationResult);
           if (element.hasClass('hacker')||element.attr("data-value")) {
             element.attr("data-value", decode(translationResult, {level: 'html5'}).replaceAll("<br>", "\n"));
-            element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/, " "));
+            element.attr("aria-label", translationResult.replaceAll("<br>", " ").replaceAll(/ +/gmi, " "));
           }
           if (typeof element.attr("data-translated") !== "undefined") {
             element.attr("data-translated", translationResult);
