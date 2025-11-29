@@ -369,7 +369,7 @@ export function translate(req, page, pagename) {
   })
   $("head").append('<link rel="alternate" hreflang="x-default" href="'+config.website+'/'+pagename+'" />');
   // figure this shit out later
-  if (req.query.lang) {
+  if (req.query.lang||true) {
     $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'?lang='+language+'" />');
   } else {
     $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'" />');
