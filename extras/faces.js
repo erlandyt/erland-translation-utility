@@ -1,4 +1,4 @@
-import { random } from "./util"
+import { random } from "./util.js"
 
 export default function face() {
   const faces = [
