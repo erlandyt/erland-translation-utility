@@ -1,5 +1,5 @@
 import face from "./faces.js";
-import { random, replaceRegexMatchCase, addCharToRegexMatch } from "./util.ja";
+import { random, replaceRegexMatchCase, addCharToRegexMatch } from "./util.js";
 
 /**
  * @param {message} message - The message to convert
