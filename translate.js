@@ -23,6 +23,7 @@ let config = {
   defaultLanguage: "en",
   debug: false,
   disableDevLang: false,
+  disableJokeFeatures: false,
   languageDir: "lang",
   website: "",
   addtohead: "" // Things to add to head in each page.
@@ -32,6 +33,7 @@ import fs from 'fs';
 import path from 'path';
 import {decode} from 'html-entities';
 import parser from 'accept-language-parser';
+import { convertToUwu } from './extras/joke.js';
 /*import { url } from 'inspector';*/
 
 const __dirname = path.resolve();
@@ -115,6 +117,11 @@ export function translationConfig(newConfig) {
     config.tests.qqq = /(qqq)/ig;
     config.tests.qqx = /(qqx)/ig;
     config.tests.qqz = /(qqz)/ig;
+  }
+  if (!config.disableJokeFeatures) {
+    config.languages.push("uwu");
+    config.tests.uwu = /(uwu)/ig;
+    config.languageFiles["uwu"] = null; // No file for uwu
   }
   return config;
 }
@@ -230,6 +237,9 @@ export function translate(req, page, pagename) {
       } else if (language === "qqz") {
         return;
       }
+      let uwuMode = false;
+      if (req.query.uwu === "true") {uwuMode = true;}
+
       let translationType = element.attr("data-translation-type")?.toLowerCase()||"";
       if ((translations[element.attr('data-translation')] === null ||typeof translations[element.attr('data-translation')]=== "undefined"||translations[element.attr('data-translation')]==="")&&translationType !== "attributes") {
         if (translations[element.attr('data-translation')]==="") {
@@ -241,29 +251,51 @@ export function translate(req, page, pagename) {
         // check if the file is in blank file
         if (!Object.keys(blank).includes(element.attr('data-translation'))) {console.log("Not in blank", element.attr('data-translation'));}
       } else {
+        let translationValue = translations[element.attr('data-translation')];
+        if (uwuMode) {
+          if (typeof translationValue === "string") {
+            translationValue = convertToUwu(translationValue);
+          } else if (Array.isArray(translationValue)) { // may be 1 or 2 layers
+            translationValue = translationValue.map(v => {
+              if (typeof v === "string") {
+                return convertToUwu(v);
+              } else if (Array.isArray(v)) {
+                return v.map(v2 => {
+                  if (typeof v2 === "string") {
+                    return convertToUwu(v2);
+                  } else {
+                    return v2;
+                  }
+                });
+              } else {
+                return v;
+              }
+            });
+          }
+        }
         // Main section
         if (translationType === "alt") { // Alt text
           //Image alt, if source is required use "src"
-          element.attr('alt', translations[element.attr('data-translation')]);
+          element.attr('alt', translationValue);
         } else if (translationType === "src") { // Image src
           // Source. Alt can be defined with "*-alt"
-          element.attr('src', translations[element.attr('data-translation')])
+          element.attr('src', translationValue)
           if (translations[element.attr('data-translation')+"-alt"]) {
             element.attr('alt', translations[element.attr('data-translation')+"-alt"])
           }
         } else if (translationType === "aria-label") {
-          element.attr("aria-label", translations[element.attr('data-translation')]);
+          element.attr("aria-label", translationValue);
         } else if (translationType === "list") { // List
           if (!['ul', 'ol'].includes(element.prop('tagName').toLowerCase())) {
             console.error("Tried to translate a list that is not a <ul> or <ol> element: "+element.attr('data-translation'));
             return;
           }
-          if (element.children().length !== translations[element.attr('data-translation')].length && element.children().length !== 0) {
-            console.warn("Warning: Length mismatch:", element.attr('data-translation'), "Element has", element.children().length, "JSON has", translations[element.attr('data-translation')].length);
+          if (element.children().length !== translationValue.length && element.children().length !== 0) {
+            console.warn("Warning: Length mismatch:", element.attr('data-translation'), "Element has", element.children().length, "JSON has", translationValue.length);
           }
           //Makes a list if the attribute matches
           const existingItems = element.children('li');
-          let translationsTemp = translations[element.attr('data-translation')]
+          let translationsTemp = translationValue
           existingItems.each((index, element) => {
             if (index < translationsTemp.length) {
               $(element).html(translationsTemp[index]);
@@ -281,7 +313,7 @@ export function translate(req, page, pagename) {
             ["data", "data", "data"],
             ["data", "data", "data", "data"], etc
           ]*/
-          let array = translations[element.attr('data-translation')];
+          let array = translationValue;
           let failed = false  
           if (!Array.isArray(array)) {console.error("Not an array"); return;}
           array.forEach(v => {
@@ -310,7 +342,7 @@ export function translate(req, page, pagename) {
           });
         } else if (translationType === "attributenly") { // Attribute translation only
           if (!element.attr("data-translation-attribute")) {console.error("No attribute:", element.attr("data-translation")); return;}
-          element.attr(element.attr("data-translation-attribute"), translations[element.attr('data-translation')])
+          element.attr(element.attr("data-translation-attribute"), translationValue)
         } else if (translationType === "attributes") {
           // Get all attributes with data-translation-attributes ("attribute1,attribute2") Found in json with data-translation combined with "-name" as key.
           if (!element.attr("data-translation-attributes")) {console.error("No attributes:", element.attr("data-translation")); return;}
@@ -337,7 +369,7 @@ export function translate(req, page, pagename) {
             }
           });
         } else { // Normal translation
-          let translationResult = translations[element.attr('data-translation')];
+          let translationResult = translationValue;
           // noinspection DuplicatedCode
           element.html(translationResult);
           if (element.hasClass('hacker')||element.attr("data-value")) {
