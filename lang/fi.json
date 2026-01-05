@@ -1,0 +1,22 @@
+{
+  "homepage-string": "Tämä <b>paksu</b> lause jossa on &amp; symbooli ja ei linkkiä: &lt;a href=\"#example\"&gt;Example&lt;/a&gt;.",
+  "homepage-list": [
+    "1",
+    "<b>2</b> - Paksu teksti",
+    "<i>3</i> - Vino teksti",
+    "<u>4</u> - Alleviivattu teksti",
+    "5 &amp; - Ät-merkki",
+    "6 &lt; - Vähemmän kuin-merkki",
+    "7 &gt; - Enemmän kuin-merkki",
+    "8 &lt;a href=\"#failure\"&gt;Tämän ei kuulu olla linki&lt;/a&gt;",
+    "9 © - Tekijänoikeusmerkki",
+    "Multi\nline text"
+  ],
+  "homepage-table": [
+    ["Header 1", "Header 2", "Header 3"],
+    ["1,1", "1,2", "1,3"],
+    ["2,1-2,3 //////////////////////////////// ////////////////////////////////"],
+    ["3,1", "3,2", "3,3-4,3<br/>///////////////////////////////<br/>/////////////////////////////////"],
+    ["4,1", "4,2"]
+  ]
+}

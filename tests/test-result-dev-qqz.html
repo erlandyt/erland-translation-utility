@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="qqz"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>translation test document</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; }
+    th, td { padding: 5px; text-align: center; }
+  </style>
+<meta data-test="true"><link rel="alternate" hreflang="en" href="https://test.example/test-page.html?lang=en"><link rel="alternate" hreflang="fi" href="https://test.example/test-page.html?lang=fi"><link rel="alternate" hreflang="sv" href="https://test.example/test-page.html?lang=sv"><link rel="alternate" hreflang="x-default" href="https://test.example/test-page.html"><link rel="canonical" href="https://test.example/test-page.html?lang=qqz"></head>
+<body>
+  <p data-translation="homepage-string">YOU MUST NOT SEE THIS</p>
+  <ol data-translation="homepage-list" data-translation-type="list">
+    <li>Item 1 Error</li>
+    <li>Item 2 Error</li>
+    <li>Item 3 Error</li>
+  </ol>
+  <table data-translation="homepage-table" data-translation-type="table" data-translation-table-format="hb">
+    <thead>
+      <tr>
+        <th>Header 1 Error</th>
+        <th>Header 2 Error</th>
+        <th>Header 3 Error</th>
+      </tr>
+    </thead>
+    <tbody> <!--4x3 grid, row 2 has one item only that spans whole. One cells goes 3,3-4,3-->
+      <tr>
+        <td>R1C1 Error</td>
+        <td>R1C2 Error</td>
+        <td>R1C3 Error</td>
+      </tr>
+      <tr>
+        <td colspan="3">R2C1-3 Error</td>
+      </tr>
+      <tr>
+        <td>R3C1 Error</td>
+        <td>R3C2 Error</td>
+        <td rowspan="2">R3-4C3 Error</td>
+      </tr>
+      <tr>
+        <td>R4C1 Error</td>
+        <td>R4C2 Error</td>
+      </tr>
+    </tbody>
+  </table>
+<a href="/testpage?lang=qqz">Page link</a>
+<a href="https://example.com">Example site doesn't get translated</a>
+
+</body></html>

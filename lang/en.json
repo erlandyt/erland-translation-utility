@@ -1,0 +1,22 @@
+{
+  "homepage-string": "This is a <b>bold</b> statement with an &amp; symbol and a link: &lt;a href=\"#example\"&gt;Example&lt;/a&gt;.",
+  "homepage-list": [
+    "1",
+    "<b>2</b> - Bold text",
+    "<i>3</i> - Italic text",
+    "<u>4</u> - Underlined text",
+    "5 &amp; - Ampersand symbol",
+    "6 &lt; - Less than symbol",
+    "7 &gt; - Greater than symbol",
+    "8 &lt;a href=\"#failure\"&gt;This shouldn't be a link&lt;/a&gt; - Link example",
+    "9 © - Copyright symbol",
+    "Multi\nline text"
+  ],
+  "homepage-table": [
+    ["Header 1", "Header 2", "Header 3"],
+    ["1,1", "1,2", "1,3"],
+    ["2,1-2,3 //////////////////////////////// ////////////////////////////////"],
+    ["3,1", "3,2", "3,3-4,3<br/>///////////////////////////////<br/>/////////////////////////////////"],
+    ["4,1", "4,2"]
+  ]
+}
