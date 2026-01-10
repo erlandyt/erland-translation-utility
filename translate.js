@@ -24,7 +24,7 @@
  * @type {TranslationConfigObject}
  */
 let config = {
-  languages: ["fi", "en", "sv"],
+  languages: [/*"fi", "en", "sv"*/],
   tests: {
     fi: /(fi(-..|))/ig,
     en: /(en(-..|))/ig,

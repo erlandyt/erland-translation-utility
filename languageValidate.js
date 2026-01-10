@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import ora from 'ora';
 //import { error } from 'console';
 
 
@@ -9,18 +8,6 @@ let estonianEnabled = (process.argv.includes("-es") ? true: false);
 console.log(estonianEnabled ? "Checking Estonian" : "Not Checking Estonian (Enable with -es)");
 
 console.log(chalk.redBright.bold("---------------"));
-const spinner = ora({
-  text: "Initializing",
-  spinner: {
-    "interval": 180,
-    "frames": [
-      "🌍 ",
-      "🌎 ",
-      "🌏 "
-    ]
-  }
-}
-).start();
 //var bar = new ProgressBar(':bar :part :elapsed', { total: 6, complete: "▰", incomplete: "▱" });
 
 
@@ -218,7 +205,6 @@ function checkKeys(reference, toCheck, language, testLang) {
 }
 
 
-spinner.text = "Blank";
 // Check keys and append to file
 //appendToFile(language, v, testLang,"- Blank\n\n");
 checkKeys(blank, en, 'English', 'blank');
@@ -229,7 +215,6 @@ if (estonianEnabled) {
 }
 checkKeys(blank, selko, 'Selko', 'blank');
 
-spinner.text = "English";
 //appendToFile(language, v, testLang,"\n\n- English\n\n");
 checkKeys(en, blank, 'Blank', 'English');
 checkKeys(en, fi, 'Finnish', 'English');
@@ -239,7 +224,6 @@ if (estonianEnabled) {
 }
 checkKeys(en, selko, 'Selko', 'English');
 
-spinner.text = "Finnish";
 //appendToFile(language, v, testLang,"\n\n- Finnish\n\n");
 checkKeys(fi, blank, 'Blank', 'Finnish');
 checkKeys(fi, en, 'English', 'Finnish');
@@ -249,7 +233,6 @@ if (estonianEnabled) {
 }
 checkKeys(fi, selko, 'Selko', 'Finnish');
 
-spinner.text = "Swedish";
 //appendToFile(language, v, testLang,"\n\n- Swedish\n\n");
 checkKeys(se, blank, 'Blank', 'Swedish');
 checkKeys(se, en, 'English', 'Swedish');
@@ -260,7 +243,6 @@ if (estonianEnabled) {
 checkKeys(se, selko, 'Selko', 'Swedish');
 
 if (estonianEnabled) {
-  spinner.text = "Estonian";
   //appendToFile(language, v, testLang,"\n\n- Estonian\n\n");
   checkKeys(et, blank, 'Blank', 'Estonian');
   checkKeys(et, en, 'English', 'Estonian');
@@ -268,7 +250,6 @@ if (estonianEnabled) {
   checkKeys(et, se, 'Swedish', 'Estonian');
   checkKeys(et, selko, 'Selko', 'Estonian');
 }
-spinner.text = "Selko";
 
 //appendToFile(language, v, testLang,"\n\n- Estonian\n\n");
 checkKeys(selko, blank, 'Blank', 'Selko');
@@ -278,7 +259,6 @@ checkKeys(selko, se, 'Swedish', 'Selko');
 if (estonianEnabled) {
   checkKeys(selko, et, 'Estonian', 'Selko');
 }
-spinner.stop();
 //console.log(errorlist)
 
 //errorlist = {blank: {Swedish: errorlist.blank.Swedish}}
