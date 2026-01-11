@@ -27,12 +27,12 @@
 let config = {
   languages: [/*"fi", "en", "sv"*/],
   tests: {
-    fi: /(fi(-..|))/ig,
-    en: /(en(-..|))/ig,
-    sv: /(sv(-..|))/ig,
-    qqq: /(qqq)/ig,
-    qqx: /(qqx)/ig,
-    qqz: /(qqz)/ig
+    fi: /(fi(-..|))/i,
+    en: /(en(-..|))/i,
+    sv: /(sv(-..|))/i,
+    qqq: /(qqq)/i,
+    qqx: /(qqx)/i,
+    qqz: /(qqz)/i
   },
   languageFiles: {
     en: "en.json",
@@ -162,9 +162,9 @@ export function translationConfig(newConfig) {
     if (!config.languages.includes("qqz")) {
       config.languages.push("qqz");
     }
-    config.tests.qqq = /(qqq)/ig;
-    config.tests.qqx = /(qqx)/ig;
-    config.tests.qqz = /(qqz)/ig;
+    config.tests.qqq = /(qqq)/i;
+    config.tests.qqx = /(qqx)/i;
+    config.tests.qqz = /(qqz)/i;
   } else {
     config.languages = config.languages.filter(lang => !["qqq", "qqx", "qqz"].includes(lang));
     delete config.tests.qqq;
@@ -185,8 +185,9 @@ export function fixlangcode(code) {
     const normalized = value.toString().toLowerCase();
 
     for (const [lang, regex] of Object.entries(tests)) {
+      regex.lastIndex = 0;
       if (regex.test(normalized)) {
-        return lang; // REAL early exit
+        return lang;
       }
     }
   }
