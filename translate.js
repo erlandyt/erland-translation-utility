@@ -11,6 +11,7 @@
  * @property {Object} languageFiles Object mapping language codes to file names
  * @property {string} defaultLanguage Default language code
  * @property {boolean} debug Enable debug mode
+ * @property {boolean} skipCache Skip caching of translations
  * @property {boolean} disableDevLang Disable development languages like qqq, qqx and qqz
  * @property {boolean} disableJokeFeatures Disable joke features like uwu translation
  * @property {string} languageDir Directory where language files are stored (e.g. "lang")
@@ -43,6 +44,7 @@ let config = {
   },
   defaultLanguage: "en",
   debug: false,
+  skipCache: false,
   disableDevLang: false,
   disableJokeFeatures: false,
   languageDir: "lang",
@@ -58,10 +60,13 @@ import path from 'path';
 import {decode} from 'html-entities';
 import parser from 'accept-language-parser';
 import { convertToUwu } from './extras/joke.js';
+import Cache from "cache";
+
 /*import { url } from 'inspector';*/
 
 const __dirname = path.resolve();
 let debugMode = process.argv.includes("--debug") || config.debug;
+let pages = new Cache(2 * 60 * 60 * 1000);    // Create a cache
 
 /*
 * Translation type attributes:
@@ -230,6 +235,13 @@ export function translate(req, page, pagename) {
     );
     // Add language validation
     console.log("Final code", language);
+    if (!config.skipCache && typeof pagename === "string" && req.query.uwu !== "true") {
+      let cachedPage = pages.get(pagename + "@" + language);
+      if (cachedPage) {
+        console.log("Cache hit for page:", pagename, "language:", language);
+        return cachedPage;
+      }
+    }
     let languageFiles = config.languageFiles;
 
     let translations = {} // Empty object for qqq, qqx & qqz since we won't load any file
@@ -470,7 +482,7 @@ export function translate(req, page, pagename) {
             if (hasFoot && array.length > 0) {
               let tfoot = element.children("tfoot");
               if (!tfoot.length) {
-                tfoot = $("<tfoot><tr><td></td></tr></tfoot>");
+                tfoot = "<tfoot><tr><td></td></tr></tfoot>";
                 element.append(tfoot);
               }
               fillSection(tfoot, [array[array.length - 1]], "td");
@@ -562,7 +574,10 @@ export function translate(req, page, pagename) {
     })
     $("head").append('<link rel="alternate" hreflang="x-default" href="'+config.website+'/'+pagename+'" />');
     $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'?lang='+language+'" />');
-    
+
+    if (!config.skipCache && typeof pagename === "string" && req.query.uwu !== "true") {
+      pages.put(pagename + "@" + language, $.html());
+    }
     return $.html();
   } catch (e) {
     console.error(e);

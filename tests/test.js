@@ -156,6 +156,14 @@ let translatedPageDevQQQ = translate(reqImitationDevQQQ, samplePage, "test-page.
 let translatedPageDevQQX = translate(reqImitationDevQQX, samplePage, "test-page.html");
 let translatedPageDevQQZ = translate(reqImitationDevQQZ, samplePage, "test-page.html");
 print("log", "Dev languages translation done.");
+print("log", "Testing cache");
+let translatedPageCached = translate(reqImitation, samplePage, "test-page.html");
+if (translatedPage === translatedPageCached) {
+  print("info", "Cache test passed: Translated pages are identical.");
+} else {
+  print("error", "Cache test failed: Translated pages differ.");
+}
+print("log", "Cache test done.");
 
 print("log", "Saving test results.");
 // Save the result to a file for manual inspection.
@@ -178,6 +186,11 @@ try {
   fs.writeFileSync("./tests/test-result-dev-qqz.html", translatedPageDevQQZ);
 } catch (e) {
   print("error", "Error saving dev qqz test result file:", e);
+}
+try {
+  fs.writeFileSync("./tests/test-result-cached.html", translatedPageCached);
+} catch (e) {
+  print("error", "Error saving cached test result file:", e);
 }
 print("log", "Test results saved.");
 

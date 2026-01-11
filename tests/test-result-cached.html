@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>translation test document</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; }
+    th, td { padding: 5px; text-align: center; }
+  </style>
+<meta data-test="true"><link rel="alternate" hreflang="en" href="https://test.example/test-page.html?lang=en"><link rel="alternate" hreflang="fi" href="https://test.example/test-page.html?lang=fi"><link rel="alternate" hreflang="sv" href="https://test.example/test-page.html?lang=sv"><link rel="alternate" hreflang="x-default" href="https://test.example/test-page.html"><link rel="canonical" href="https://test.example/test-page.html?lang=en"></head>
+<body>
+  <p data-translation="homepage-string">This is a <b>bold</b> statement with an &amp; symbol and a link: &lt;a href="#example"&gt;Example&lt;/a&gt;.</p>
+  <ol data-translation="homepage-list" data-translation-type="list">
+    <li>1</li>
+    <li><b>2</b> - Bold text</li>
+    <li><i>3</i> - Italic text</li>
+  <li><u>4</u> - Underlined text</li><li>5 &amp; - Ampersand symbol</li><li>6 &lt; - Less than symbol</li><li>7 &gt; - Greater than symbol</li><li>8 &lt;a href="#failure"&gt;This shouldn't be a link&lt;/a&gt; - Link example</li><li>9 © - Copyright symbol</li><li>Multi
+line text</li></ol>
+  <table data-translation="homepage-table" data-translation-type="table" data-translation-table-format="hb">
+    <thead>
+      <tr>
+        <th>Header 1</th>
+        <th>Header 2</th>
+        <th>Header 3</th>
+      </tr>
+    </thead>
+    <tbody> <!--4x3 grid, row 2 has one item only that spans whole. One cells goes 3,3-4,3-->
+      <tr>
+        <td>1,1</td>
+        <td>1,2</td>
+        <td>1,3</td>
+      </tr>
+      <tr>
+        <td colspan="3">2,1-2,3 //////////////////////////////// ////////////////////////////////</td>
+      </tr>
+      <tr>
+        <td>3,1</td>
+        <td>3,2</td>
+        <td rowspan="2">3,3-4,3&lt;br/&gt;///////////////////////////////&lt;br/&gt;/////////////////////////////////</td>
+      </tr>
+      <tr>
+        <td>4,1</td>
+        <td>4,2</td>
+      </tr>
+    </tbody>
+  </table>
+<a href="/testpage?lang=en">Page link</a>
+<a href="https://example.com">Example site doesn't get translated</a>
+
+</body></html>
