@@ -174,38 +174,26 @@ export function translationConfig(newConfig) {
   return config;
 }
 
-export function fixlangcode(code) { // Necessary? Maybe use pick?
-  if (code === null || code === undefined) {return null;}
+export function fixlangcode(code) {
+  if (code == null || code === false) return null;
 
-  let correctCode = null;
+  const tests = config.tests;
 
-  let tests = config.tests;
-  if (debugMode) {
-    console.log(typeof code);
-    console.log("code", code);
-  }
-  if (code === false) {return null;} //Escape if the language code is wrong
+  const values = Array.isArray(code) ? code : [code];
 
-  if (typeof code === "object") {
-    //If codes are a list, then go through them
-    code.forEach(v2 /*i2*/=> {
-      Object.values(tests).forEach((v, i) => { //test them agains all code options
-        if (v.test(v2.toString().toLowerCase())) {
-          correctCode = Object.keys(tests)[i];
-          return correctCode;
-        }
-      });
-    });
-  } else {
-    Object.values(tests).forEach((v, i) => {
-      if (v.test(code.toString().toLowerCase())) {
-        correctCode = Object.keys(tests)[i];
-        return correctCode;
+  for (const value of values) {
+    const normalized = value.toString().toLowerCase();
+
+    for (const [lang, regex] of Object.entries(tests)) {
+      if (regex.test(normalized)) {
+        return lang; // REAL early exit
       }
-    });
+    }
   }
-  return correctCode; //null
+
+  return null;
 }
+
 
 export function languageSelected(req) {
   let supportedLanguages = config.languages;
