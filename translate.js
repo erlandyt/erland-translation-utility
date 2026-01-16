@@ -522,18 +522,20 @@ export function translate(req, page, pagename) {
     if (req.query.lang) {
       $("a").each((i, v) => {
         let href = $(v).attr("href");
-        if (!/(mailto:|https|http|^#).*/igm.test(href)) {
-          // config exclusions
-          if (config.excludeLinksRegex) {
-            let excludeRegex = new RegExp(config.excludeLinksRegex, "igm");
-            if (excludeRegex.test(href)) {
-              return; // skip this link
+        if (href) {
+          if (!/(^mailto:|^tel:|^sms:|^https|^http|^#|^:\/\/|^\/\/).*/igm.test(href)) {
+            // config exclusions
+            if (config.excludeLinksRegex) {
+              let excludeRegex = new RegExp(config.excludeLinksRegex, "igm");
+              if (excludeRegex.test(href)) {
+                return; // skip this link
+              }
             }
-          }
-          let url = new URL(href, config.website || "https://erland.fi");
-          if (!url.searchParams.get("lang")) {
-            url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
-            $(v).attr("href", url.toString().replaceAll(config.website || "https://erland.fi", ""));
+            let url = new URL(href, config.website || "https://erland.fi");
+            if (!url.searchParams.get("lang")) {
+              url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
+              $(v).attr("href", url.toString().replaceAll(config.website || "https://erland.fi", ""));
+            }
           }
         }
       });
