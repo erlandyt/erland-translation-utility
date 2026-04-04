@@ -1,3 +1,4 @@
+import { generateLanguageRegexes } from "./languageTests.js";
 // Add jsdoc definitions
 
 /**
@@ -7,25 +8,33 @@
 /**
  * @typedef {Object} TranslationConfigObject
  * @property {string[]} languages Array of supported language codes
- * @property {TestMap} tests Object mapping language codes to regexes
- * @property {Object} languageFiles Object mapping language codes to file names
- * @property {string} defaultLanguage Default language code
- * @property {boolean} debug Enable debug mode
- * @property {boolean} skipCache Skip caching of translations
- * @property {boolean} disableDevLang Disable development languages like qqq, qqx and qqz
- * @property {boolean} disableJokeFeatures Disable joke features like uwu translation
- * @property {string} languageDir Directory where language files are stored (e.g. "lang")
+ * @property {TestMap} [tests] Object mapping language codes to regexes
+ * @property {Object} [languageFiles] Object mapping language codes to file names
+ * @property {string} [defaultLanguage='en'] Default language code
+ * @property {boolean} [debug=false] Enable debug mode
+ * @property {boolean} [skipCache=false] Skip caching of translations
+ * @property {boolean} [disableDevLang=false] Disable development languages like qqq, qqx and qqz
+ * @property {boolean} [disableJokeFeatures=false] Disable joke features like uwu translation
+ * @property {boolean} [lazyTests=true] Generates the language tests on behalf of the user.
+ * @property {string} [languageDir='lang'] Directory where language files are stored (e.g. "lang")
  * @property {string} website Include the full website URL, e.g. "https://erland.fi"
- * @property {string} addtohead HTML string to add to the <head> of translated pages
- * @property {string|null} excludeLinksRegex Regex string to exclude certain links from translation processing
- * @property {boolean} handleNewlinesAsBr Whether to convert newlines to <br> tags in translations
+ * @property {string | null} [addToHead=null] HTML string to add to the <head> of translated pages
+ * @property {string|null} [excludeLinksRegex] Regex string to exclude certain links from transformation in translation processing (for example if you have pages that aren't translated, this allows you to exclude those from having ?lang=XX appended.)
+ * @property {boolean} [handleNewlinesAsBr=false] Whether to convert newlines to <br> tags in translations
+ * @property {string} [langParameterName='lang'] Query parameter name for language selection (default: "lang")
+ * @property {boolean} [useDirectoryStructure] Whether to use directory structure for language selection rather than query parameters. Not implemented yet.
+ * @property {boolean} [usePageNameStructure] Whether to use file name structure for language selection rather than query parameters. Not implemented yet.
+ * @property {null | 'query' | 'pagename' | 'directory'} [structure=null] What structure to use for language variants. Not implemented yet. Will replace {@link TranslationConfigObject#usePageNameStructure} and {@link TranslationConfigObject#useDirectoryStructure}.
+ * @property {boolean} [useXDefault=false] Whether to use x-default hreflang for default language. Likely noncompliant unless using redirect value for {@link TranslationConfigObject#defaultLangBehaviour}.
+ * @property {Object.<string, Object.<string, string>>} [pageNameMap] Mapping of page names for different languages, for use in future with {@link TranslationConfigObject#useFileNameStructure}.
+ * @property {null | 'redirect'} [defaultLangBehaviour] How should requests with default language be handled. Leaving unset results in the page being shown in request's language and redirect redirects to request's own language version.
  */
 
 /**
  * @type {TranslationConfigObject}
  */
 let config = {
-  languages: [/*"fi", "en", "sv"*/],
+  languages: [],
   tests: {
     fi: /(fi(-..|))/i,
     en: /(en(-..|))/i,
@@ -47,11 +56,28 @@ let config = {
   skipCache: false,
   disableDevLang: false,
   disableJokeFeatures: false,
+  lazyTests: true,
   languageDir: "lang",
   website: "",
-  addtohead: "",
+  addToHead: "",
   excludeLinksRegex: null,
-  handleNewlinesAsBr: false
+  handleNewlinesAsBr: false,
+  langParameterName: "lang",
+  useDirectoryStructure: false,
+  useFileNameStructure: false,
+  useXDefault: false,
+  pageNameMap: {
+    "": {
+      "en": "home",
+      "fi": "koti",
+      "sv": "hem"
+    },
+    "team": {
+      "en": "team",
+      "fi": "tiimi",
+      "sv": "lag"
+    }
+  }
 };
 
 import * as cheerio from 'cheerio';
@@ -70,8 +96,8 @@ let pages = new Cache(2 * 60 * 60 * 1000);    // Create a cache
 
 /*
 * Translation type attributes:
-* alt: Have localied alt-text. Only for <img> tags.
-* src: Have localized src. Add "-alt" to the end of the translation key to translate the alt text. Only for <img> tags.
+* alt: Have localised alt-text. Only for <img> tags.
+* src: Have localised src. Add "-alt" to the end of the translation key to translate the alt text. Only for <img> tags.
 * list: Have a list of items. Only for <ul> and <ol> tags. Currently starts by removing all children, should be fixed in future.
 * table: Have a table. Only for <table> tags. Doesn't remove children.
 * -> data-translation-table-format: "h", "b", "f" for header, body, footer or combination. If h or f is used, there can only be one row. If both h and f are used, they must be 2 rows. If any combination with b is used, any number of rows is allowed.
@@ -151,6 +177,18 @@ export function translationConfig(newConfig) {
     config = updateModifiedValues(config, newConfig);
   } else if (debugMode) {
     console.log("No new config provided, using default.");
+  }
+  if (newConfig.langs ||newConfig.lang) {
+    console.error("Warning! You are defining an unused variable. The correct variable for defining languages is 'languages'. Please update your config.");
+  }
+  if (newConfig.lazyTests) {
+    // delete old tests.
+    for (const key in config.tests) {
+      delete config.tests[key];
+    }
+    // generate new tests based on languages array
+    const generatedTests = generateLanguageRegexes(config.languages);
+    config.tests = {...config.tests, ...generatedTests};
   }
   if (!config.disableDevLang) {
     if (!config.languages.includes("qqq")) {
@@ -243,7 +281,7 @@ export function translate(req, page, pagename) {
     //For all element
     $("html").attr('lang', language);
     try {
-      $("head").append(config.addtohead);
+      $("head").append(config.addToHead);
     } catch (err) {console.error(err);}
 
     let uwuMode = false;
@@ -392,29 +430,29 @@ export function translate(req, page, pagename) {
             });
             if (failed === true) {console.error("Failed to translate array: \""+element.attr('data-translation')+"\""); return;}
             // New version with support for thead, tbody and tfoot. Simply, the first row is thead if h is used, the last row is tfoot if f is used, and the rest is tbody.
-            // DO NOT CLEAR! element.html(""); // Clear existing content
+            // BROKEN! Uses jquery, not Cheerio.
             // ─────────────────────────────
             // Helpers (preserve attributes)
             // ─────────────────────────────
             function ensureRow(section, rowIndex) {
-              let rows = section.children("tr");
+              const rows = section.children("tr");
               if (rows.eq(rowIndex).length) return rows.eq(rowIndex);
 
               const template = rows.last().length
-                ? rows.last().clone(true)
-                : $("<tr>");
+                ? rows.last().clone()
+                : $('<tr></tr>');
 
               section.append(template);
               return section.children("tr").last();
             }
 
             function ensureCell(row, cellIndex, tagName) {
-              let cells = row.children(tagName);
+              const cells = row.children(tagName);
               if (cells.eq(cellIndex).length) return cells.eq(cellIndex);
 
               const template = cells.last().length
-                ? cells.last().clone(true)
-                : $(`<${tagName}>`);
+                ? cells.last().clone()
+                : $(`<${tagName}></${tagName}>`);
 
               row.append(template);
               return row.children(tagName).last();
@@ -423,9 +461,10 @@ export function translate(req, page, pagename) {
             function fillSection(section, data, cellTag) {
               data.forEach((rowData, r) => {
                 const row = ensureRow(section, r);
+
                 rowData.forEach((value, c) => {
                   const cell = ensureCell(row, c, cellTag);
-                  cell.text(value); // replaces content, keeps attributes
+                  cell.text(String(value)); // replaces content, keeps attributes
                 });
               });
             }
@@ -447,10 +486,13 @@ export function translate(req, page, pagename) {
             // ─────────────────────────────
             if (hasHead && array.length > 0) {
               let thead = element.children("thead");
+
               if (!thead.length) {
-                thead = $("<thead><tr><th></th></tr></thead>");
+                let tempFix = "<thead><tr><th></th></tr></thead>"
+                thead = $(tempFix);
                 element.prepend(thead);
               }
+
               fillSection(thead, [array[0]], "th");
             }
 
@@ -458,6 +500,7 @@ export function translate(req, page, pagename) {
             // TBODY
             // ─────────────────────────────
             let tbody = element.children("tbody");
+
             if (!tbody.length) {
               tbody = $("<tbody><tr><td></td></tr></tbody>");
               element.append(tbody);
@@ -470,10 +513,12 @@ export function translate(req, page, pagename) {
             // ─────────────────────────────
             if (hasFoot && array.length > 0) {
               let tfoot = element.children("tfoot");
+
               if (!tfoot.length) {
-                tfoot = "<tfoot><tr><td></td></tr></tfoot>";
+                tfoot = $("<tfoot><tr><td></td></tr></tfoot>");
                 element.append(tfoot);
               }
+
               fillSection(tfoot, [array[array.length - 1]], "td");
             }
           } else if (translationType === "attributeonly") { // Attribute translation only
@@ -532,9 +577,16 @@ export function translate(req, page, pagename) {
               }
             }
             let url = new URL(href, config.website || "https://erland.fi");
-            if (!url.searchParams.get("lang")) {
+            let aLang = url.searchParams.get("lang");
+            if (!aLang) {
               url.searchParams.append("lang", language);//new URLSearchParams("?lang="+language)
               $(v).attr("href", url.toString().replaceAll(config.website || "https://erland.fi", ""));
+              $(v).attr("hreflang", language); // set hreflang attribute
+            } else {
+              if (!$(v).attr("hreflang")) {
+                $(v).attr("hreflang", aLang); // set hreflang attribute
+                console.warn("Warning: link missing hreflang, setting to lang param:", aLang, "for link", href);
+              }
             }
           }
         }
@@ -563,7 +615,9 @@ export function translate(req, page, pagename) {
       if (/(qqq|qqx|qqz)/gmi.test(e)) {return;}
       $("head").append('<link rel="alternate" hreflang="'+e+'" href="'+config.website+'/'+pagename+'?lang='+e+'" />');
     })
-    $("head").append('<link rel="alternate" hreflang="x-default" href="'+config.website+'/'+pagename+'" />');
+    if (config.useXDefault||config.defaultLangBehaviour === "redirect") {
+      $("head").append('<link rel="alternate" hreflang="x-default" href="' + config.website + '/' + pagename + '" />');
+    }
     $("head").append('<link rel="canonical" href="'+config.website+'/'+pagename+'?lang='+language+'" />');
 
     if (!config.skipCache && typeof pagename === "string" && req.query.uwu !== "true") {

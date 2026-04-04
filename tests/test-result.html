@@ -7,7 +7,7 @@
     table, th, td { border: 1px solid black; border-collapse: collapse; }
     th, td { padding: 5px; text-align: center; }
   </style>
-<meta data-test="true"><link rel="alternate" hreflang="en" href="https://test.example/test-page.html?lang=en"><link rel="alternate" hreflang="fi" href="https://test.example/test-page.html?lang=fi"><link rel="alternate" hreflang="sv" href="https://test.example/test-page.html?lang=sv"><link rel="alternate" hreflang="x-default" href="https://test.example/test-page.html"><link rel="canonical" href="https://test.example/test-page.html?lang=en"></head>
+<link rel="alternate" hreflang="en" href="https://test.example/test-page.html?lang=en"><link rel="alternate" hreflang="fi" href="https://test.example/test-page.html?lang=fi"><link rel="alternate" hreflang="sv" href="https://test.example/test-page.html?lang=sv"><link rel="canonical" href="https://test.example/test-page.html?lang=en"></head>
 <body>
   <p data-translation="homepage-string">This is a <b>bold</b> statement with an &amp; symbol and a link: &lt;a href="#example"&gt;Example&lt;/a&gt;.</p>
   <ol data-translation="homepage-list" data-translation-type="list">
@@ -16,7 +16,7 @@
     <li><i>3</i> - Italic text</li>
   <li><u>4</u> - Underlined text</li><li>5 &amp; - Ampersand symbol</li><li>6 &lt; - Less than symbol</li><li>7 &gt; - Greater than symbol</li><li>8 &lt;a href="#failure"&gt;This shouldn't be a link&lt;/a&gt; - Link example</li><li>9 © - Copyright symbol</li><li>Multi
 line text</li></ol>
-  <table data-translation="homepage-table" data-translation-type="table" data-translation-table-format="hb">
+  <table data-translation="homepage-table" data-translation-type="table" data-translation-table-format="hbf">
     <thead>
       <tr>
         <th>Header 1</th>
@@ -43,8 +43,15 @@ line text</li></ol>
         <td>4,2</td>
       </tr>
     </tbody>
+    <tfoot>
+      <tr>
+        <td>Footer 1</td>
+        <td>Footer 2</td>
+        <td>Footer 3</td>
+      </tr>
+    </tfoot>
   </table>
-<a href="/testpage?lang=en">Page link</a>
+<a href="/testpage?lang=en" hreflang="en">Page link</a>
 <a href="https://example.com">Example site doesn't get translated</a>
 
 </body></html>
